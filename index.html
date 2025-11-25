@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>~Circular Waveforms~</title>
+  <style>
+    body {
+      margin: 0; background: black; overflow: hidden;
+    }
+    #controls {
+      position: fixed; top: 20px; left: 20px; z-index: 10;
+      display: flex; gap: 10px;
+    }
+    button {
+      background: #222; color: white; border: none;
+      padding: 10px 20px; cursor: pointer; border-radius: 6px;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #444;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="controls">
+    <button id="startBtn">Start Mic</button>
+    <button id="stopBtn">Stop Mic</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    let width, height;
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let audioContext, micSource, analyser;
+    let isRecording = false;
+    const waveforms = []; // array of past waveform objects
+
+    class CircularWaveform {
+      constructor(dataArray, radius, color1, color2) {
+        this.dataArray = dataArray; // Uint8Array frequency data snapshot
+        this.radius = radius;       // base radius of the circle
+        this.color1 = color1;       // gradient start color
+        this.color2 = color2;       // gradient end color
+      }
+
+      draw() {
+        const len = this.dataArray.length;
+        const centerX = width/2;
+        const centerY = height/2;
+
+        ctx.beginPath();
+
+        for(let i=0; i < len; i++) {
+          let angle = (i / len) * Math.PI * 2;
+          let amp = this.dataArray[i] / 255 * 100; // amplitude scaling
+
+          // point on the circle perimeter plus amplitude
+          let x = centerX + Math.cos(angle) * (this.radius + amp);
+          let y = centerY + Math.sin(angle) * (this.radius + amp);
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        ctx.closePath();
+
+        // create gradient stroke
+        const grad = ctx.createRadialGradient(centerX, centerY, this.radius*0.8, centerX, centerY, this.radius+100);
+        grad.addColorStop(0, this.color1);
+        grad.addColorStop(1, this.color2);
+
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+      }
+    }
+
+    async function startMic() {
+      if(isRecording) return;
+
+      if(!audioContext) {
+        audioContext = new AudioContext();
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+        micSource = audioContext.createMediaStreamSource(stream);
+
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        micSource.connect(analyser);
+
+        isRecording = true;
+        console.log("Mic started");
+      } catch(e) {
+        alert("Microphone permission denied or error: "+e.message);
+      }
+    }
+
+    function stopMic() {
+      if(!isRecording) return;
+
+      // Grab a snapshot of the frequency data to store as a waveform
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(dataArray);
+
+      // Create a new waveform with a random radius and color palette
+      const radius = 50 + waveforms.length * 30; // stagger rings outward
+      const color1 = `hsl(${Math.random()*360}, 100%, 70%)`;
+      const color2 = `hsl(${Math.random()*360}, 100%, 40%)`;
+
+      waveforms.push(new CircularWaveform(dataArray, radius, color1, color2));
+
+      isRecording = false;
+      console.log("Mic stopped - waveform saved");
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      ctx.clearRect(0, 0, width, height);
+
+      if(isRecording && analyser) {
+        // live waveform (pulse radius)
+        const liveData = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(liveData);
+
+        const liveRadius = 50 + waveforms.length * 30;
+        const liveColor1 = `hsl(200, 100%, 70%)`;
+        const liveColor2 = `hsl(340, 100%, 70%)`;
+
+        const liveWaveform = new CircularWaveform(liveData, liveRadius, liveColor1, liveColor2);
+        liveWaveform.draw();
+      }
+
+      // draw all saved waveforms
+      for(let wf of waveforms) {
+        wf.draw();
+      }
+    }
+
+    animate();
+
+    document.getElementById("startBtn").onclick = startMic;
+    document.getElementById("stopBtn").onclick = stopMic;
+
+  </script>
+
+</body>
+</html>
