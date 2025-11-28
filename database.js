@@ -1,25 +1,16 @@
-const sqlite3 = require('sqlite3').verbose();
+const { createClient } = require('@supabase/supabase-js');
 
-// Open a database connection. The file will be created if it doesn't exist.
-const db = new sqlite3.Database('./waveforms.db', (err) => {
-  if (err) {
-    console.error('Error opening database', err.message);
-  } else {
-    console.log('Connected to the SQLite database.');
-    // Create the table if it doesn't exist
-    db.run(`CREATE TABLE IF NOT EXISTS waveforms (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT,
-      imageData TEXT NOT NULL,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`, (err) => {
-      if (err) {
-        console.error('Error creating table', err.message);
-      } else {
-        console.log('Table "waveforms" is ready.');
-      }
-    });
-  }
-});
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-module.exports = db;
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('SUPABASE_URL and SUPABASE_ANON_KEY are required in your .env file.');
+  // Exit or throw an error to prevent the app from running without credentials
+  process.exit(1); 
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+console.log('Connected to Supabase.');
+
+module.exports = supabase;

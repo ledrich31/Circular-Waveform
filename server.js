@@ -21,40 +21,38 @@ app.get('/', (req, res) => {
 
 // --- NEW ---
 // API endpoint to get all saved waveforms
-app.get('/api/waveforms', (req, res) => {
-  const sql = "SELECT id, email, imageData, createdAt FROM waveforms ORDER BY createdAt DESC";
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      console.error('Error fetching from database', err.message);
-      return res.status(500).json({ message: 'Error fetching from database' });
-    }
-    res.json({
-      message: 'success',
-      data: rows
-    });
+app.get('/api/waveforms', async (req, res) => {
+  const { data, error } = await db.from('waveforms').select('id, email, imageData, createdAt').order('createdAt', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching from Supabase', error.message);
+    return res.status(500).json({ message: 'Error fetching from Supabase' });
+  }
+  res.json({
+    message: 'success',
+    data: data
   });
 });
 // --- END NEW ---
 
-app.post('/api/save-waveform', (req, res) => {
+app.post('/api/save-waveform', async (req, res) => {
   const { email, imageData } = req.body;
 
   if (!imageData) {
     return res.status(400).json({ message: 'Missing image data' });
   }
 
-  const sql = `INSERT INTO waveforms (email, imageData) VALUES (?, ?)`;
-  db.run(sql, [email, imageData], function(err) {
-    if (err) {
-      console.error('Error saving to database', err.message);
-      return res.status(500).json({ message: 'Error saving to database' });
-    }
-    console.log(`A new waveform has been saved with ID: ${this.lastID}`);
-    res.status(200).json({ message: 'Waveform saved successfully!' });
-  });
+  const { data, error } = await db.from('waveforms').insert([{ email: email || null, imageData: imageData }]);
+
+  if (error) {
+    console.error('Error saving to Supabase', error.message);
+    return res.status(500).json({ message: 'Error saving to Supabase' });
+  }
+  console.log(`A new waveform has been saved.`); // Supabase insert does not return lastID easily
+  res.status(200).json({ message: 'Waveform saved successfully!' });
 });
 
-app.post('/api/send-waveform', (req, res) => {
+app.post('/api/send-waveform', async (req, res) => {
   const { email, imageData } = req.body;
 
   if (!email || !imageData) {
@@ -62,13 +60,13 @@ app.post('/api/send-waveform', (req, res) => {
   }
 
   // First, save to database
-  const sql = `INSERT INTO waveforms (email, imageData) VALUES (?, ?)`;
-  db.run(sql, [email, imageData], function(err) {
-    if (err) {
-      console.error('Error saving to database', err.message);
-      return res.status(500).json({ message: 'Error saving to database' });
-    }
-    console.log(`A new waveform has been saved with ID: ${this.lastID}`);
+  const { data: dbData, error: dbError } = await db.from('waveforms').insert([{ email: email, imageData: imageData }]);
+
+  if (dbError) {
+    console.error('Error saving to Supabase', dbError.message);
+    return res.status(500).json({ message: 'Error saving to Supabase' });
+  }
+  console.log(`A new waveform has been saved.`);
     
     // --- Now, send the real email via SendGrid ---
     const msg = {
@@ -98,10 +96,9 @@ app.post('/api/send-waveform', (req, res) => {
           console.error(error.response.body);
         }
         // Still send a success response to the client, as the main action (saving) worked.
-        res.status(200).json({ message: 'Waveform saved, but there was an error sending the email.' });
-      });
-  });
-});
+                            res.status(200).json({ message: 'Waveform saved, but there was an error sending the email.' });
+            }); // Close catch block for sgMail.send
+}); // Close app.post('/api/send-waveform', async (req, res) => { ... }); function
 
 // Start server
 app.listen(port, () => {
