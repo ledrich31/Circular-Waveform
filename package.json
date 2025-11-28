@@ -1,0 +1,28 @@
+{
+  "name": "circular-waveform",
+  "version": "1.0.0",
+  "description": "",
+  "main": "p5.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ledrich31/Circular-Waveform.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ledrich31/Circular-Waveform/issues"
+  },
+  "homepage": "https://github.com/ledrich31/Circular-Waveform#readme",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "nodemailer": "^7.0.11",
+    "sqlite3": "^5.1.7"
+  }
+}

@@ -6,10 +6,24 @@
   <style>
     body {
       margin: 0; background: black; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    #controls {
+    #top-left {
       position: fixed; top: 20px; left: 20px; z-index: 10;
-      display: flex; gap: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    #top-left h1 {
+      color: white;
+      font-size: 24px;
+      margin: 0;
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-weight: bold;
+    }
+    #buttons {
+      display: flex;
+      gap: 10px;
     }
     button {
       background: #222; color: white; border: none;
@@ -19,19 +33,127 @@
     button:hover {
       background: #444;
     }
+    #top-right {
+      position: fixed; top: 20px; right: 20px; z-index: 10;
+      color: #ccc;
+      font-size: 14px;
+      text-align: right;
+      line-height: 1.5;
+    }
     canvas {
       display: block;
       position: fixed;
       top: 0; left: 0;
       width: 100vw; height: 100vh;
     }
+    #email-form {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    #email-input {
+      background-color: #333;
+      border: 1px solid #555;
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      flex-grow: 1;
+    }
+    #email-input::placeholder {
+      color: #999;
+    }
+    /* Gallery Modal Styles */
+    .hidden {
+      display: none !important;
+    }
+    #gallery-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto; /* Allow scrolling for many images */
+    }
+    #gallery-modal h2 {
+      color: white;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    #gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px; /* Limit width of grid */
+    }
+    .gallery-item {
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      color: #ccc;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .gallery-item img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: black; /* Ensure transparent parts render black */
+    }
+    .gallery-item p {
+      font-size: 12px;
+      margin: 0;
+      word-break: break-all; /* For long emails */
+    }
+    #close-gallery-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: transparent;
+      color: white;
+      font-size: 30px;
+      border: none;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 10px;
+    }
+    #close-gallery-btn:hover {
+      color: #aaa;
+    }
   </style>
 </head>
 <body>
 
-  <div id="controls">
-    <button id="startBtn">Start Mic</button>
-    <button id="stopBtn">Stop Mic</button>
+  <div id="top-left">
+    <h1>Circular Waveform Visualizer</h1>
+            <div id="buttons">
+              <button id="startBtn">Start Mic</button>
+              <button id="stopBtn">Stop Mic</button>
+              <button id="saveBtn">Save as Image</button>
+              <button id="gallery-btn">View Gallery</button>
+            </div>    <div id="email-form">
+      <input type="email" id="email-input" placeholder="Enter your email...">
+      <button id="send-btn">Send to Email</button>
+    </div>
+  </div>
+
+  <div id="top-right">
+    <p>
+      Press "Start Mic" to begin visualizing your audio.
+      <br />
+      Press "Stop Mic" to freeze the current waveform.
+      <br />
+      Saved waveforms will layer on top of each other.
+    </p>
   </div>
 
   <canvas id="canvas"></canvas>
@@ -130,6 +252,13 @@
 
       waveforms.push(new CircularWaveform(dataArray, radius, color1, color2));
 
+      if (micSource && micSource.mediaStream) {
+        micSource.mediaStream.getTracks().forEach(track => track.stop());
+      }
+      if (micSource) {
+        micSource.disconnect(analyser);
+      }
+
       isRecording = false;
       console.log("Mic stopped - waveform saved");
     }
@@ -137,7 +266,8 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, width, height);
 
       if(isRecording && analyser) {
         // live waveform (pulse radius)
@@ -163,7 +293,125 @@
     document.getElementById("startBtn").onclick = startMic;
     document.getElementById("stopBtn").onclick = stopMic;
 
+    function saveCanvas() {
+      const link = document.createElement('a');
+      link.download = 'circular-waveform.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+    document.getElementById("saveBtn").onclick = saveCanvas;
+
+    async function sendWaveformToEmail() {
+      const emailInput = document.getElementById('email-input');
+      const email = emailInput.value;
+
+      if (!email) {
+        alert('Please enter your email address.');
+        return;
+      }
+
+      const imageDataURL = canvas.toDataURL('image/png');
+      
+      const sendBtn = document.getElementById('send-btn');
+      sendBtn.textContent = 'Sending...';
+      sendBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/send-waveform', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email,
+            imageData: imageDataURL,
+          }),
+        });
+
+        if (response.ok) {
+          alert('Your waveform has been sent! Please check your email.');
+        } else {
+          const errorData = await response.json().catch(() => ({ message: 'Server returned an error' }));
+          alert(`Error sending waveform: ${errorData.message || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Failed to send waveform:', error);
+        alert('An error occurred while trying to send your waveform. Is the server running?');
+      } finally {
+        sendBtn.textContent = 'Send to Email';
+        sendBtn.disabled = false;
+      }
+    }
+    document.getElementById('send-btn').onclick = sendWaveformToEmail;
+
+    // --- NEW GALLERY JAVASCRIPT ---
+    const galleryModal = document.getElementById('gallery-modal');
+    const galleryGrid = document.getElementById('gallery-grid');
+    const galleryBtn = document.getElementById('gallery-btn');
+    const closeGalleryBtn = document.getElementById('close-gallery-btn');
+
+    galleryBtn.onclick = async () => {
+      galleryModal.classList.remove('hidden');
+      await loadGallery();
+    };
+
+    closeGalleryBtn.onclick = () => {
+      galleryModal.classList.add('hidden');
+    };
+
+    async function loadGallery() {
+      galleryGrid.innerHTML = '<p style="color: #ccc;">Loading waveforms...</p>'; // Show loading message
+      try {
+        const response = await fetch('/api/waveforms');
+        if (response.ok) {
+          const { data } = await response.json();
+          galleryGrid.innerHTML = ''; // Clear loading message
+
+          if (data && data.length > 0) {
+            data.forEach(wf => {
+              const itemDiv = document.createElement('div');
+              itemDiv.classList.add('gallery-item');
+
+              const img = document.createElement('img');
+              img.src = wf.imageData;
+              img.alt = `Waveform from ${wf.email}`;
+
+              const emailP = document.createElement('p');
+              emailP.textContent = `Email: ${wf.email}`;
+
+              const dateP = document.createElement('p');
+              dateP.textContent = new Date(wf.createdAt).toLocaleString();
+
+              itemDiv.appendChild(img);
+              itemDiv.appendChild(emailP);
+              itemDiv.appendChild(dateP);
+              galleryGrid.appendChild(itemDiv);
+            });
+          } else {
+            galleryGrid.innerHTML = '<p style="color: #ccc;">No waveforms saved yet.</p>';
+          }
+        } else {
+          galleryGrid.innerHTML = '<p style="color: red;">Error loading waveforms.</p>';
+        }
+      } catch (error) {
+        console.error('Failed to load gallery:', error);
+        galleryGrid.innerHTML = '<p style="color: red;">Failed to connect to server to load waveforms.</p>';
+      }
+    }
+    // --- END NEW GALLERY JAVASCRIPT ---
+
   </script>
+
+  <!-- NEW GALLERY MODAL -->
+  <div id="gallery-modal" class="hidden">
+    <button id="close-gallery-btn">&times;</button>
+    <h2>Saved Waveforms</h2>
+    <div id="gallery-grid">
+      <!-- Waveforms will be loaded here dynamically -->
+      <p style="color: #ccc;">Loading waveforms...</p>
+    </div>
+  </div>
+  <!-- END NEW GALLERY MODAL -->
 
 </body>
 </html>
