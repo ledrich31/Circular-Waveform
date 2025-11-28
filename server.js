@@ -36,6 +36,24 @@ app.get('/api/waveforms', (req, res) => {
 });
 // --- END NEW ---
 
+app.post('/api/save-waveform', (req, res) => {
+  const { email, imageData } = req.body;
+
+  if (!email || !imageData) {
+    return res.status(400).json({ message: 'Missing email or image data' });
+  }
+
+  const sql = `INSERT INTO waveforms (email, imageData) VALUES (?, ?)`;
+  db.run(sql, [email, imageData], function(err) {
+    if (err) {
+      console.error('Error saving to database', err.message);
+      return res.status(500).json({ message: 'Error saving to database' });
+    }
+    console.log(`A new waveform has been saved with ID: ${this.lastID}`);
+    res.status(200).json({ message: 'Waveform saved successfully!' });
+  });
+});
+
 app.post('/api/send-waveform', (req, res) => {
   const { email, imageData } = req.body;
 
