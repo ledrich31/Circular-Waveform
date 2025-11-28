@@ -9,7 +9,7 @@ const db = new sqlite3.Database('./waveforms.db', (err) => {
     // Create the table if it doesn't exist
     db.run(`CREATE TABLE IF NOT EXISTS waveforms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT NOT NULL,
+      email TEXT,
       imageData TEXT NOT NULL,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`, (err) => {

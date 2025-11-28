@@ -137,11 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function saveWaveform() {
       // 1. Get email
       const emailInput = document.getElementById('email-input');
-      const email = emailInput.value;
-      if (!email) {
-        alert('Please enter your email address to save a waveform.');
-        return;
-      }
+      const email = emailInput.value; // Get email, but don't validate for saving
 
       // 2. Get image data
       const imageDataURL = canvas.toDataURL('image/png');

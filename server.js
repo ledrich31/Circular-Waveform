@@ -39,8 +39,8 @@ app.get('/api/waveforms', (req, res) => {
 app.post('/api/save-waveform', (req, res) => {
   const { email, imageData } = req.body;
 
-  if (!email || !imageData) {
-    return res.status(400).json({ message: 'Missing email or image data' });
+  if (!imageData) {
+    return res.status(400).json({ message: 'Missing image data' });
   }
 
   const sql = `INSERT INTO waveforms (email, imageData) VALUES (?, ?)`;
