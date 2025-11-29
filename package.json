@@ -1,12 +1,12 @@
-  1 {
+ {
    "name": "circular-waveform",
    "version": "1.0.0",
    "description": "",
    "main": "p5.js",
    "scripts": {
-     "start": "node server.js",
+    "start": "node server.js",
      "test": "echo \"Error: no test specified\" && exit 1"
-   },
+  },
    "repository": {
      "type": "git",
      "url": "git+https://github.com/ledrich31/Circular-Waveform.git"
@@ -26,8 +26,8 @@
      "@sendgrid/mail": "^8.1.6",
      "@supabase/supabase-js": "^2.86.0",
      "dotenv": "^17.2.3",
-    "express": "^5.1.0",
+     "express": "^5.1.0",
      "nodemailer": "^7.0.11",
      "sqlite3": "^5.1.7"
-   }
+    }
  }
