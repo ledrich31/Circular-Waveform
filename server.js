@@ -101,6 +101,7 @@ app.post('/api/send-waveform', async (req, res) => {
 }); // Close app.post('/api/send-waveform', async (req, res) => { ... }); function
 
 // Start server
-app.listen(port, () => {
-  console.log(`Server is running. Open your browser and go to http://localhost:${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`Server is running. Open your browser and go to http://localhost:${port}`);
+// });
+module.exports = app;
