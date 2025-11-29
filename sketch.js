@@ -1,11 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Audio Visualizer</title>
+// This file was HTML but saved as .js; replace it with JS that creates the same DOM so the file parses correctly.
 
-  <style>
+(function () {
+  // set document title and meta
+  document.title = "Audio Visualizer";
+  const meta = document.createElement("meta");
+  meta.name = "viewport";
+  meta.content = "width=device-width, initial-scale=1.0";
+  document.head.appendChild(meta);
+
+  // styles
+  const style = document.createElement("style");
+  style.textContent = `
     body {
       margin: 0;
       overflow: hidden;
@@ -34,18 +39,32 @@
     button:hover {
       background: #444;
     }
-  </style>
-</head>
-<body>
+  `;
+  document.head.appendChild(style);
 
-  <div id="controls">
-    <button id="startBtn">Start Mic</button>
-    <button id="stopBtn">Stop Mic</button>
-  </div>
+  // controls container
+  const controls = document.createElement("div");
+  controls.id = "controls";
 
-  <!-- YOU WERE MISSING THIS -->
-  <canvas id="canvas"></canvas>
+  const startBtn = document.createElement("button");
+  startBtn.id = "startBtn";
+  startBtn.textContent = "Start Mic";
 
-  <script src="script.js"></script>
-</body>
-</html>
+  const stopBtn = document.createElement("button");
+  stopBtn.id = "stopBtn";
+  stopBtn.textContent = "Stop Mic";
+
+  controls.appendChild(startBtn);
+  controls.appendChild(stopBtn);
+  document.body.appendChild(controls);
+
+  // canvas
+  const canvas = document.createElement("canvas");
+  canvas.id = "canvas";
+  document.body.appendChild(canvas);
+
+  // optionally load external script.js if needed
+  // const script = document.createElement("script");
+  // script.src = "script.js";
+  // document.body.appendChild(script);
+})();
