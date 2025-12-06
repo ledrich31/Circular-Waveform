@@ -6,3 +6,9 @@ node_modules/
 
 # Local Database
 waveforms.db
+
+# macOS
+.DS_Store
+
+# Gemini CLI backup
+.gemini_backup/

@@ -242,16 +242,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
               const img = document.createElement('img');
               img.src = wf.imageData;
-              img.alt = `Waveform from ${wf.email}`;
-
-              const emailP = document.createElement('p');
-              emailP.textContent = `Email: ${wf.email}`;
+              img.alt = 'Circular Waveform';
 
               const dateP = document.createElement('p');
               dateP.textContent = new Date(wf.createdAt).toLocaleString();
 
               itemDiv.appendChild(img);
-              itemDiv.appendChild(emailP);
               itemDiv.appendChild(dateP);
               galleryGrid.appendChild(itemDiv);
             });
